@@ -1,47 +1,61 @@
 package csv
 
 import (
-	"bytes"
+	"bufio"
 	"io"
 )
 
 // Writer can be used to write CSV formatted data to an io.Writer
 type Writer struct {
-	destination io.Writer
-	buffer      *bytes.Buffer
+	w interface {
+		Write([]byte) (int, error)
+		Flush() error
+	}
 }
 
 // NewWriter returns a writer ready to write CSV formatted data to the destination
 func NewWriter(destination io.Writer) *Writer {
 	return &Writer{
-		destination: destination,
-		buffer:      &bytes.Buffer{},
+		w: bufio.NewWriter(destination),
 	}
 }
 
 // Write writes a single record as CSV formatted data to the destination
 func (w *Writer) Write(record []string) error {
+	var err error
+
 	for i := 0; i < len(record); i++ {
 		if i > 0 {
-			w.buffer.Write([]byte(`,`))
-		}
-
-		w.buffer.Write([]byte(`"`))
-
-		for j := 0; j < len(record[i]); j++ {
-			if record[i][j] == '"' {
-				w.buffer.Write([]byte(`""`))
-			} else {
-				w.buffer.Write([]byte(record[i][j : j+1]))
+			_, err = w.w.Write([]byte(`,`))
+			if err != nil {
+				return err
 			}
 		}
 
-		w.buffer.Write([]byte(`"`))
+		_, err = w.w.Write([]byte(`"`))
+		if err != nil {
+			return err
+		}
+
+		for j := 0; j < len(record[i]); j++ {
+			if record[i][j] == '"' {
+				_, err = w.w.Write([]byte(`""`))
+			} else {
+				_, err = w.w.Write([]byte(record[i][j : j+1]))
+			}
+
+			if err != nil {
+				return err
+			}
+		}
+
+		_, err = w.w.Write([]byte(`"`))
+		if err != nil {
+			return err
+		}
 	}
 
-	w.buffer.Write([]byte("\r\n"))
-
-	_, err := io.Copy(w.destination, w.buffer)
+	_, err = w.w.Write([]byte("\r\n"))
 	return err
 }
 
@@ -55,4 +69,9 @@ func (w *Writer) WriteAll(records [][]string) error {
 	}
 
 	return nil
+}
+
+// Flush flushes the internal write buffer
+func (w *Writer) Flush() error {
+	return w.w.Flush()
 }
