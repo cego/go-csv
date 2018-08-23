@@ -1,6 +1,7 @@
 package csv
 
 import (
+	"bufio"
 	"strings"
 	"testing"
 )
@@ -32,6 +33,11 @@ func TestWriteAll(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		err = w.Flush()
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		if b.String() != cases[i].output {
 			t.Fatalf("case %v expected output %#v, got %#v", i, cases[i].output, b.String())
 		}
@@ -39,10 +45,28 @@ func TestWriteAll(t *testing.T) {
 }
 
 func TestWriteAllErrorPassthrough(t *testing.T) {
-	w := NewWriter(writerStub{})
+	w := NewWriter(&writerStub{})
 	err := w.WriteAll([][]string{{""}})
+
+	if err == nil {
+		err = w.Flush()
+	}
 
 	if err != stubError {
 		t.Fatalf("expected %v got %v", stubError, err)
+	}
+}
+
+func TestWriteAllBufferErrorPassthrough(t *testing.T) {
+	for i := 1; i < 5; i++ {
+		w := NewWriter(writerStub{})
+
+		// Replace the internal bufio buffer to trigger the writerStub error after i bytes written
+		w.w = bufio.NewWriterSize(writerStub{}, i)
+
+		err := w.WriteAll([][]string{{`a`, `b`}})
+		if err != stubError {
+			t.Fatalf("case with internal buffer length %v expected %v got %v", i, stubError, err)
+		}
 	}
 }

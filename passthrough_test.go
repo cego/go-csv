@@ -23,6 +23,11 @@ func TestWriterToReader(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		err = w.Flush()
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		r := NewReader(strings.NewReader(b.String()))
 		records, err := r.ReadAll()
 		if err != io.EOF {
@@ -65,6 +70,11 @@ func TestReaderToWriter(t *testing.T) {
 		w := NewWriter(&b)
 
 		err = w.WriteAll(records)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = w.Flush()
 		if err != nil {
 			t.Fatal(err)
 		}

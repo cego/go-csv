@@ -15,3 +15,7 @@ type writerStub struct{}
 func (r writerStub) Write(b []byte) (int, error) {
 	return 0, stubError
 }
+
+func (r writerStub) Flush() error {
+	return stubError
+}
