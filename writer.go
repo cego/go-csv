@@ -7,10 +7,7 @@ import (
 
 // Writer can be used to write CSV formatted data to an io.Writer
 type Writer struct {
-	w interface {
-		Write([]byte) (int, error)
-		Flush() error
-	}
+	w *bufio.Writer
 }
 
 // NewWriter returns a writer ready to write CSV formatted data to the destination

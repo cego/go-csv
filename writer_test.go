@@ -1,6 +1,7 @@
 package csv
 
 import (
+	"bufio"
 	"strings"
 	"testing"
 )
@@ -57,11 +58,11 @@ func TestWriteAllErrorPassthrough(t *testing.T) {
 }
 
 func TestWriteAllBufferErrorPassthrough(t *testing.T) {
-	for i := 0; i < 5; i++ {
-		w := NewWriter(&writerStub{})
+	for i := 1; i < 5; i++ {
+		w := NewWriter(writerStub{})
 
-		// Replace the internal bufio buffer with a stub that fails after i "written" bytes
-		w.w = &writerStub{errorCountdown: i}
+		// Replace the internal bufio buffer to trigger the writerStub error after i bytes written
+		w.w = bufio.NewWriterSize(writerStub{}, i)
 
 		err := w.WriteAll([][]string{{`a`, `b`}})
 		if err != stubError {
